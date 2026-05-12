@@ -1,74 +1,189 @@
 # Emelt szintű digitális kultúra érettségi – SQL és adatbázis-kezelés
 
-## Bevezetés
-
-Az SQL és az adatbázis-kezelés az emelt szintű digitális kultúra érettségi egyik legfontosabb témaköre. A feladatok elsőre bonyolultnak tűnhetnek, de valójában ugyanazok a minták ismétlődnek újra és újra.
-
-A siker kulcsa nem a parancsok bemagolása, hanem annak megértése:
-
-- melyik adat melyik táblában található,
-- hogyan kapcsolódnak a táblák,
-- mikor kell szűrni,
-- mikor kell csoportosítani,
-- és hogyan lehet a feladat szövegét SQL-gondolkodásra lefordítani.
-
-Ez a tananyag:
-- a magyar emelt digitális kultúra követelményrendszerére épül,
-- a W3Schools logikáját követi,
-- MySQL/MariaDB környezetre készült,
-- és minden témához:
-  - syntaxot,
-  - egyszerű példát,
-  - érettségi szintű példát,
-  - eredménytáblát,
-  - rövid magyarázatot tartalmaz.
-
----
-
 # Tartalomjegyzék
 
-1. SQL Syntax
-2. Adatbázis-alapfogalmak
-3. Adatbázis létrehozása
-4. CREATE TABLE
-5. Adattípusok
-6. PRIMARY KEY és FOREIGN KEY
-7. INSERT INTO
-8. SELECT
-9. DISTINCT
-10. WHERE
-11. ORDER BY
-12. AND / OR / NOT
-13. UPDATE
-14. DELETE
-15. NULL
-16. MIN / MAX
-17. COUNT / SUM / AVG
-18. LIKE
-19. Wildcardok
-20. IN
-21. BETWEEN
-22. Aliasok
-23. CONCAT
-24. Dátumkezelés
-25. CASE
-26. JOIN
-27. LEFT JOIN
-28. GROUP BY
-29. HAVING
-30. Függvénykombinációk
-31. Allekérdezések
-32. EXISTS
-33. CREATE TABLE AS
-34. INSERT INTO SELECT
-35. Összetett érettségi feladatok
-36. Tipikus hibák
+1. Mintaadatbázis
+2. SQL Syntax
+3. Adatbázis-alapfogalmak
+4. CREATE DATABASE
+5. CREATE TABLE
+6. Adattípusok
+7. PRIMARY KEY és FOREIGN KEY
+8. INSERT INTO
+9. SELECT
+10. DISTINCT
+11. WHERE
+12. ORDER BY
+13. AND / OR / NOT
+14. UPDATE
+15. DELETE
+16. NULL
+17. MIN / MAX
+18. COUNT / SUM / AVG
+19. LIKE
+20. Wildcardok
+21. IN
+22. BETWEEN
+23. Aliasok
+24. CONCAT
+25. Dátumkezelés
+26. CASE
+27. JOIN
+28. LEFT JOIN
+29. GROUP BY
+30. HAVING
+31. Függvénykombinációk
+32. Allekérdezések
+33. EXISTS
+34. CREATE TABLE AS
+35. INSERT INTO SELECT
+36. Összetett érettségi feladatok
+37. Tipikus hibák
 
 ---
 
-# 1. SQL Syntax
+# 1. Mintaadatbázis
 
-## Alap syntax
+A teljes tananyag ugyanarra a többtáblás adatbázisra épül.
+
+---
+
+# Kapcsolati séma
+
+```text
+sportolo
+   |
+   | 1:N
+   |
+jelentkezes
+   |
+   | N:1
+   |
+esemeny
+   |
+   | N:1
+   |
+sportag
+```
+
+---
+
+# Teljes létrehozó script
+
+```sql
+DROP DATABASE IF EXISTS sportverseny;
+
+CREATE DATABASE sportverseny
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_hungarian_ci;
+
+USE sportverseny;
+
+CREATE TABLE sportolo (
+    id INT PRIMARY KEY,
+    vezeteknev VARCHAR(50) NOT NULL,
+    keresztnev VARCHAR(50) NOT NULL,
+    varos VARCHAR(50),
+    szuletesi_datum DATE,
+    email VARCHAR(100)
+);
+
+CREATE TABLE sportag (
+    id INT PRIMARY KEY,
+    nev VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE esemeny (
+    id INT PRIMARY KEY,
+    nev VARCHAR(100) NOT NULL,
+    sportag_id INT,
+    helyszin VARCHAR(100),
+    datum DATE,
+    max_letszam INT,
+    nevezesi_dij INT,
+    FOREIGN KEY (sportag_id)
+        REFERENCES sportag(id)
+);
+
+CREATE TABLE jelentkezes (
+    id INT PRIMARY KEY,
+    sportolo_id INT,
+    esemeny_id INT,
+    pontszam INT,
+    fizetett VARCHAR(10),
+    megjegyzes VARCHAR(100),
+    FOREIGN KEY (sportolo_id)
+        REFERENCES sportolo(id),
+    FOREIGN KEY (esemeny_id)
+        REFERENCES esemeny(id)
+);
+```
+
+---
+
+# Adatok feltöltése
+
+## sportolo
+
+```sql
+INSERT INTO sportolo VALUES
+(1, 'Kovács', 'Anna', 'Budapest', '2006-05-12', 'anna@email.hu'),
+(2, 'Nagy', 'Béla', 'Pécs', '2005-03-21', 'bela@email.hu'),
+(3, 'Tóth', 'Kata', 'Budapest', '2007-08-10', 'kata@email.hu'),
+(4, 'Szabó', 'Márk', 'Győr', '2004-11-02', NULL),
+(5, 'Varga', 'Lili', 'Pécs', '2006-07-17', 'lili@email.hu'),
+(6, 'Kiss', 'Dávid', 'Szeged', '2005-01-25', 'david@email.hu'),
+(7, 'Molnár', 'Eszter', 'Debrecen', '2007-09-30', 'eszter@email.hu');
+```
+
+---
+
+## sportag
+
+```sql
+INSERT INTO sportag VALUES
+(1, 'Kosárlabda'),
+(2, 'Kézilabda'),
+(3, 'Futball'),
+(4, 'Röplabda'),
+(5, 'Úszás');
+```
+
+---
+
+## esemeny
+
+```sql
+INSERT INTO esemeny VALUES
+(1, 'Tavaszi kupa', 1, 'Budapest Aréna', '2026-03-12', 20, 5000),
+(2, 'Városi bajnokság', 2, 'Pécsi Sportcsarnok', '2026-04-03', 16, 4500),
+(3, 'Nyári fociest', 3, 'Győri pálya', '2026-06-20', 22, 3000),
+(4, 'Röplabda nap', 4, 'Budapest Aréna', '2026-05-15', 18, 3500),
+(5, 'Őszi úszónap', 5, 'Debreceni Uszoda', '2026-09-10', 30, 6000);
+```
+
+---
+
+## jelentkezes
+
+```sql
+INSERT INTO jelentkezes VALUES
+(1, 1, 1, 18, 'igen', 'stabil teljesítmény'),
+(2, 2, 1, 12, 'nem', 'késői befizetés'),
+(3, 3, 2, 20, 'igen', 'kiemelkedő eredmény'),
+(4, 4, 3, 9, 'igen', NULL),
+(5, 5, 2, 15, 'nem', NULL),
+(6, 1, 4, 17, 'igen', 'jó teljesítmény'),
+(7, 3, 1, 19, 'igen', 'nagyon jó dobószázalék'),
+(8, 6, 3, 14, 'igen', NULL),
+(9, 7, 5, 16, 'nem', 'első verseny');
+```
+
+---
+
+# 2. SQL Syntax
+
+## Általános syntax
 
 ```sql
 SELECT oszlopok
@@ -79,31 +194,35 @@ ORDER BY oszlop;
 
 ---
 
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT vezeteknev, keresztnev
 FROM sportolo;
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kovács | Anna |
+| Nagy | Béla |
+| Tóth | Kata |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a budapesti sportolók nevét ABC sorrendben.
+## Bonyolultabb példa
 
 ```sql
-SELECT vezeteknev, keresztnev
+SELECT vezeteknev,
+       keresztnev
 FROM sportolo
 WHERE varos = 'Budapest'
-ORDER BY vezeteknev, keresztnev;
+ORDER BY vezeteknev,
+         keresztnev;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | vezeteknev | keresztnev |
 |---|---|
@@ -112,165 +231,13 @@ ORDER BY vezeteknev, keresztnev;
 
 ---
 
-# 2. Adatbázis-alapfogalmak
+# 3. Adatbázis-alapfogalmak
 
----
+## Rekord példa
 
-# Adatbázis
-
-Egymással kapcsolatban álló adatok szervezett gyűjteménye.
-
----
-
-# Tábla
-
-Az adatokat táblákban tároljuk.
-
-Példák:
-- sportolo
-- esemeny
-- jelentkezes
-
----
-
-# Rekord
-
-A tábla egy sora.
-
-| id | nev |
-|---:|---|
-| 1 | Kovács Anna |
-
----
-
-# Mező
-
-A tábla egy oszlopa.
-
-Példák:
-- nev
-- varos
-- pontszam
-
----
-
-# PRIMARY KEY
-
-Egyedi azonosító.
-
-```sql
-id INT PRIMARY KEY
-```
-
----
-
-# FOREIGN KEY
-
-Kapcsolat két tábla között.
-
-```sql
-FOREIGN KEY (sportolo_id)
-REFERENCES sportolo(id)
-```
-
----
-
-# 3. Adatbázis létrehozása
-
----
-
-## Syntax
-
-```sql
-CREATE DATABASE adatbazis_nev;
-```
-
----
-
-## Példa
-
-```sql
-CREATE DATABASE sportverseny;
-```
-
----
-
-## Adatbázis kiválasztása
-
-```sql
-USE sportverseny;
-```
-
----
-
-# 4. CREATE TABLE
-
----
-
-## Syntax
-
-```sql
-CREATE TABLE tabla_nev (
-    oszlop adattipus
-);
-```
-
----
-
-## Egyszerű példa
-
-```sql
-CREATE TABLE sportolo (
-    id INT PRIMARY KEY,
-    nev VARCHAR(100)
-);
-```
-
----
-
-## Érettségi szintű példa
-
-```sql
-CREATE TABLE jelentkezes (
-    id INT PRIMARY KEY,
-    sportolo_id INT,
-    esemeny_id INT,
-    pontszam INT,
-    fizetett VARCHAR(10),
-    FOREIGN KEY (sportolo_id)
-        REFERENCES sportolo(id),
-    FOREIGN KEY (esemeny_id)
-        REFERENCES esemeny(id)
-);
-```
-
----
-
-# 5. Adattípusok
-
-| Típus | Jelentés |
-|---|---|
-| INT | egész szám |
-| VARCHAR | szöveg |
-| DATE | dátum |
-| DOUBLE | valós szám |
-| BOOLEAN | logikai érték |
-
----
-
-## Példa
-
-```sql
-CREATE TABLE esemeny (
-    id INT,
-    nev VARCHAR(100),
-    datum DATE
-);
-```
-
----
-
-# 6. PRIMARY KEY és FOREIGN KEY
+| id | vezeteknev | keresztnev |
+|---:|---|---|
+| 1 | Kovács | Anna |
 
 ---
 
@@ -291,76 +258,123 @@ REFERENCES sportolo(id)
 
 ---
 
-## Kapcsolati séma
+# 4. CREATE DATABASE
 
-```text
-sportolo
-    |
-jelentkezes
-    |
-esemeny
-```
-
----
-
-# 7. INSERT INTO
-
----
-
-## Syntax
+## Példa
 
 ```sql
-INSERT INTO tabla
-VALUES (...);
+CREATE DATABASE sportverseny;
 ```
 
 ---
 
-## Egyszerű példa
+# 5. CREATE TABLE
+
+## Példa
 
 ```sql
-INSERT INTO sportolo
-VALUES (1, 'Kovács', 'Anna');
+CREATE TABLE sportolo (
+    id INT PRIMARY KEY,
+    nev VARCHAR(100)
+);
 ```
 
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
+
+```sql
+CREATE TABLE jelentkezes (
+    id INT PRIMARY KEY,
+    sportolo_id INT,
+    esemeny_id INT,
+    pontszam INT,
+    FOREIGN KEY (sportolo_id)
+        REFERENCES sportolo(id),
+    FOREIGN KEY (esemeny_id)
+        REFERENCES esemeny(id)
+);
+```
+
+---
+
+# 6. Adattípusok
+
+| Típus | Jelentés |
+|---|---|
+| INT | egész szám |
+| VARCHAR | szöveg |
+| DATE | dátum |
+| DOUBLE | valós szám |
+| BOOLEAN | logikai érték |
+
+---
+
+# 7. PRIMARY KEY és FOREIGN KEY
+
+## PRIMARY KEY
+
+```sql
+id INT PRIMARY KEY
+```
+
+---
+
+## FOREIGN KEY
+
+```sql
+FOREIGN KEY (sportag_id)
+REFERENCES sportag(id)
+```
+
+---
+
+# 8. INSERT INTO
+
+## Példa
+
+```sql
+INSERT INTO sportag
+VALUES (6, 'Tenisz');
+```
+
+---
+
+## Bonyolultabb példa
 
 ```sql
 INSERT INTO jelentkezes
-VALUES (1, 1, 2, 18, 'igen');
+VALUES (
+    10,
+    2,
+    4,
+    18,
+    'igen',
+    'utolsó pillanatos nevezés'
+);
 ```
 
 ---
 
-# 8. SELECT
+# 9. SELECT
 
----
-
-## Syntax
-
-```sql
-SELECT oszlopok
-FROM tabla;
-```
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
 FROM sportolo;
 ```
 
+### Végeredmény
+
+| id | vezeteknev | keresztnev | varos |
+|---:|---|---|---|
+| 1 | Kovács | Anna | Budapest |
+| 2 | Nagy | Béla | Pécs |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a sportolók nevét és városát.
+## Bonyolultabb példa
 
 ```sql
 SELECT vezeteknev,
@@ -369,61 +383,44 @@ SELECT vezeteknev,
 FROM sportolo;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | vezeteknev | keresztnev | varos |
 |---|---|---|
 | Kovács | Anna | Budapest |
+| Nagy | Béla | Pécs |
 
 ---
 
-# 9. DISTINCT
+# 10. DISTINCT
 
----
-
-## Syntax
-
-```sql
-SELECT DISTINCT oszlop
-FROM tabla;
-```
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT DISTINCT varos
 FROM sportolo;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | varos |
 |---|
 | Budapest |
 | Pécs |
+| Győr |
+| Szeged |
+| Debrecen |
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Add meg, hány különböző városból érkeztek sportolók.
+## Bonyolultabb példa
 
 ```sql
 SELECT COUNT(DISTINCT varos)
 FROM sportolo;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | COUNT(DISTINCT varos) |
 |---:|
@@ -431,21 +428,9 @@ FROM sportolo;
 
 ---
 
-# 10. WHERE
+# 11. WHERE
 
----
-
-## Syntax
-
-```sql
-SELECT *
-FROM tabla
-WHERE feltetel;
-```
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -453,51 +438,36 @@ FROM sportolo
 WHERE varos = 'Budapest';
 ```
 
+### Végeredmény
+
+| id | vezeteknev | keresztnev |
+|---:|---|---|
+| 1 | Kovács | Anna |
+| 3 | Tóth | Kata |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a 2006 után született budapesti sportolókat.
+## Bonyolultabb példa
 
 ```sql
 SELECT vezeteknev,
        keresztnev
 FROM sportolo
-WHERE varos = 'Budapest'
-AND szuletesi_ev > 2006;
+WHERE YEAR(szuletesi_datum) > 2006;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | vezeteknev | keresztnev |
 |---|---|
 | Tóth | Kata |
+| Molnár | Eszter |
 
 ---
 
-# 11. ORDER BY
+# 12. ORDER BY
 
----
-
-## Syntax
-
-```sql
-ORDER BY oszlop ASC
-```
-
-vagy
-
-```sql
-ORDER BY oszlop DESC
-```
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -505,13 +475,16 @@ FROM sportolo
 ORDER BY vezeteknev;
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kiss | Dávid |
+| Kovács | Anna |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a három legjobb pontszámot.
+## Bonyolultabb példa
 
 ```sql
 SELECT sportolo_id,
@@ -521,9 +494,7 @@ ORDER BY pontszam DESC
 LIMIT 3;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | sportolo_id | pontszam |
 |---:|---:|
@@ -533,26 +504,26 @@ LIMIT 3;
 
 ---
 
-# 12. AND / OR / NOT
+# 13. AND / OR / NOT
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
 FROM sportolo
 WHERE varos = 'Budapest'
-AND szuletesi_ev = 2006;
+AND YEAR(szuletesi_datum) = 2006;
 ```
+
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kovács | Anna |
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a budapesti vagy pécsi sportolókat, akik 2005 után születtek.
+## Bonyolultabb példa
 
 ```sql
 SELECT vezeteknev,
@@ -563,26 +534,22 @@ WHERE (
     varos = 'Budapest'
     OR varos = 'Pécs'
 )
-AND szuletesi_ev > 2005;
+AND YEAR(szuletesi_datum) > 2005;
 ```
 
----
+### Végeredmény
 
-# 13. UPDATE
-
----
-
-## Syntax
-
-```sql
-UPDATE tabla
-SET oszlop = ertek
-WHERE feltetel;
-```
+| vezeteknev | keresztnev | varos |
+|---|---|---|
+| Kovács | Anna | Budapest |
+| Tóth | Kata | Budapest |
+| Varga | Lili | Pécs |
 
 ---
 
-## Egyszerű példa
+# 14. UPDATE
+
+## Példa
 
 ```sql
 UPDATE sportolo
@@ -592,11 +559,7 @@ WHERE id = 1;
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Állítsd át az összes nem fizetett jelentkezést „függőben” állapotúra.
+## Bonyolultabb példa
 
 ```sql
 UPDATE jelentkezes
@@ -606,20 +569,9 @@ WHERE fizetett = 'nem';
 
 ---
 
-# 14. DELETE
+# 15. DELETE
 
----
-
-## Syntax
-
-```sql
-DELETE FROM tabla
-WHERE feltetel;
-```
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 DELETE FROM sportolo
@@ -628,11 +580,7 @@ WHERE id = 7;
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Töröld azokat a jelentkezéseket, ahol a pontszám 10 alatt van.
+## Bonyolultabb példa
 
 ```sql
 DELETE FROM jelentkezes
@@ -641,11 +589,9 @@ WHERE pontszam < 10;
 
 ---
 
-# 15. NULL
+# 16. NULL
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -653,9 +599,7 @@ FROM sportolo
 WHERE email IS NULL;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | vezeteknev | keresztnev |
 |---|---|
@@ -663,11 +607,7 @@ WHERE email IS NULL;
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat a sportolókat, akiknek nincs email címe, de már jelentkeztek eseményre.
+## Bonyolultabb példa
 
 ```sql
 SELECT DISTINCT s.vezeteknev,
@@ -678,22 +618,24 @@ ON s.id = j.sportolo_id
 WHERE s.email IS NULL;
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Szabó | Márk |
+
 ---
 
-# 16. MIN / MAX
+# 17. MIN / MAX
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT MAX(pontszam)
 FROM jelentkezes;
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | MAX(pontszam) |
 |---:|
@@ -701,11 +643,7 @@ FROM jelentkezes;
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Add meg eseményenként a legmagasabb pontszámot.
+## Bonyolultabb példa
 
 ```sql
 SELECT esemeny_id,
@@ -714,26 +652,33 @@ FROM jelentkezes
 GROUP BY esemeny_id;
 ```
 
+### Végeredmény
+
+| esemeny_id | maxpont |
+|---:|---:|
+| 1 | 19 |
+| 2 | 20 |
+
 ---
 
-# 17. COUNT / SUM / AVG
+# 18. COUNT / SUM / AVG
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT AVG(pontszam)
 FROM jelentkezes;
 ```
 
+### Végeredmény
+
+| AVG(pontszam) |
+|---:|
+| 15.56 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Add meg sportáganként az átlagpontszámot.
+## Bonyolultabb példa
 
 ```sql
 SELECT sp.nev,
@@ -743,16 +688,22 @@ JOIN esemeny e
 ON sp.id = e.sportag_id
 JOIN jelentkezes j
 ON e.id = j.esemeny_id
-GROUP BY sp.id, sp.nev;
+GROUP BY sp.id,
+         sp.nev;
 ```
 
+### Végeredmény
+
+| nev | atlag |
+|---|---:|
+| Kosárlabda | 16.33 |
+| Kézilabda | 17.50 |
+
 ---
 
-# 18. LIKE
+# 19. LIKE
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -760,13 +711,16 @@ FROM sportolo
 WHERE vezeteknev LIKE 'K%';
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kovács | Anna |
+| Kiss | Dávid |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat a sportolókat, akiknek a keresztneve tartalmazza az „a” betűt.
+## Bonyolultabb példa
 
 ```sql
 SELECT vezeteknev,
@@ -775,9 +729,16 @@ FROM sportolo
 WHERE keresztnev LIKE '%a%';
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kovács | Anna |
+| Tóth | Kata |
+
 ---
 
-# 19. Wildcardok
+# 20. Wildcardok
 
 | Jel | Jelentés |
 |---|---|
@@ -794,13 +755,17 @@ FROM sportolo
 WHERE keresztnev LIKE 'A___';
 ```
 
+### Végeredmény
+
+| keresztnev |
+|---|
+| Anna |
+
 ---
 
-# 20. IN
+# 21. IN
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -808,13 +773,16 @@ FROM sportolo
 WHERE varos IN ('Budapest', 'Pécs');
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kovács | Anna |
+| Nagy | Béla |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat az eseményeket, amelyek Budapesten vagy Győrben kerülnek megrendezésre.
+## Bonyolultabb példa
 
 ```sql
 SELECT nev,
@@ -826,28 +794,36 @@ WHERE helyszin IN (
 );
 ```
 
+### Végeredmény
+
+| nev | helyszin |
+|---|---|
+| Tavaszi kupa | Budapest Aréna |
+| Nyári fociest | Győri pálya |
+
 ---
 
-# 21. BETWEEN
+# 22. BETWEEN
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
 FROM sportolo
-WHERE szuletesi_ev
+WHERE YEAR(szuletesi_datum)
 BETWEEN 2005 AND 2006;
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+| Kovács | Anna |
+| Nagy | Béla |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a 2026 április és június közötti eseményeket.
+## Bonyolultabb példa
 
 ```sql
 SELECT nev,
@@ -858,22 +834,34 @@ BETWEEN '2026-04-01'
 AND '2026-06-30';
 ```
 
+### Végeredmény
+
+| nev | datum |
+|---|---|
+| Városi bajnokság | 2026-04-03 |
+| Röplabda nap | 2026-05-15 |
+
 ---
 
-# 22. Aliasok
+# 23. Aliasok
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT vezeteknev AS vezetek
 FROM sportolo;
 ```
 
+### Végeredmény
+
+| vezetek |
+|---|
+| Kovács |
+| Nagy |
+
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
 
 ```sql
 SELECT CONCAT(
@@ -884,13 +872,18 @@ SELECT CONCAT(
 FROM sportolo;
 ```
 
+### Végeredmény
+
+| teljes_nev |
+|---|
+| Kovács Anna |
+| Nagy Béla |
+
 ---
 
-# 23. CONCAT
+# 24. CONCAT
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT CONCAT(
@@ -901,9 +894,15 @@ SELECT CONCAT(
 FROM sportolo;
 ```
 
+### Végeredmény
+
+| CONCAT(...) |
+|---|
+| Kovács Anna |
+
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
 
 ```sql
 SELECT CONCAT(
@@ -916,42 +915,34 @@ SELECT CONCAT(
 FROM sportolo;
 ```
 
----
+### Végeredmény
 
-# 24. Dátumkezelés
-
-A dátumfüggvények nagyon fontosak, mert az érettségin gyakran szerepelnek:
-- események,
-- időpontok,
-- időintervallumok,
-- születési dátumok.
+| adat |
+|---|
+| Kovács Anna - Budapest |
 
 ---
+
+# 25. Dátumkezelés
 
 # YEAR()
 
-## Syntax
-
-```sql
-YEAR(datum)
-```
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT YEAR(datum)
 FROM esemeny;
 ```
 
+### Végeredmény
+
+| YEAR(datum) |
+|---:|
+| 2026 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a 2026-os eseményeket.
+## Bonyolultabb példa
 
 ```sql
 SELECT nev,
@@ -960,26 +951,33 @@ FROM esemeny
 WHERE YEAR(datum) = 2026;
 ```
 
+### Végeredmény
+
+| nev | datum |
+|---|---|
+| Tavaszi kupa | 2026-03-12 |
+
 ---
 
 # MONTH()
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT MONTH(datum)
 FROM esemeny;
 ```
 
+### Végeredmény
+
+| MONTH(datum) |
+|---:|
+| 3 |
+| 4 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a májusi eseményeket.
+## Bonyolultabb példa
 
 ```sql
 SELECT nev,
@@ -988,26 +986,33 @@ FROM esemeny
 WHERE MONTH(datum) = 5;
 ```
 
+### Végeredmény
+
+| nev | datum |
+|---|---|
+| Röplabda nap | 2026-05-15 |
+
 ---
 
 # DAY()
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT DAY(datum)
 FROM esemeny;
 ```
 
+### Végeredmény
+
+| DAY(datum) |
+|---:|
+| 12 |
+| 3 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat az eseményeket, amelyeket hónap 15-én rendeznek.
+## Bonyolultabb példa
 
 ```sql
 SELECT nev,
@@ -1016,15 +1021,17 @@ FROM esemeny
 WHERE DAY(datum) = 15;
 ```
 
+### Végeredmény
+
+| nev | datum |
+|---|---|
+| Röplabda nap | 2026-05-15 |
+
 ---
 
 # DATEDIFF()
 
-Két dátum különbsége napokban.
-
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT DATEDIFF(
@@ -1033,9 +1040,7 @@ SELECT DATEDIFF(
 );
 ```
 
----
-
-## Végeredmény
+### Végeredmény
 
 | DATEDIFF |
 |---:|
@@ -1043,11 +1048,7 @@ SELECT DATEDIFF(
 
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Add meg, hány nap múlva lesznek az események 2026-03-01-hez képest.
+## Bonyolultabb példa
 
 ```sql
 SELECT nev,
@@ -1059,33 +1060,15 @@ SELECT nev,
 FROM esemeny;
 ```
 
----
+### Végeredmény
 
-# NOW()
-
-Aktuális dátum és idő.
-
-```sql
-SELECT NOW();
-```
-
----
-
-# CURDATE()
-
-Aktuális dátum.
-
-```sql
-SELECT CURDATE();
-```
+| nev | datum | napok |
+|---|---|---:|
+| Tavaszi kupa | 2026-03-12 | 11 |
 
 ---
 
 # DATE_FORMAT()
-
-Dátum formázása.
-
----
 
 ## Példa
 
@@ -1097,27 +1080,57 @@ SELECT DATE_FORMAT(
 FROM esemeny;
 ```
 
+### Végeredmény
+
+| DATE_FORMAT |
+|---|
+| 2026.03.12 |
+
 ---
 
-# 25. CASE
+## Bonyolultabb példa
+
+```sql
+SELECT nev,
+DATE_FORMAT(
+    datum,
+    '%Y. %M %d.'
+) AS formatalt_datum
+FROM esemeny;
+```
+
+### Végeredmény
+
+| nev | formatalt_datum |
+|---|---|
+| Tavaszi kupa | 2026. March 12. |
 
 ---
 
-## Egyszerű példa
+# 26. CASE
+
+## Példa
 
 ```sql
 SELECT pontszam,
-       CASE
-           WHEN pontszam >= 18
-           THEN 'kiváló'
-           ELSE 'egyéb'
-       END AS minosites
+CASE
+    WHEN pontszam >= 18
+    THEN 'kiváló'
+    ELSE 'egyéb'
+END AS minosites
 FROM jelentkezes;
 ```
 
+### Végeredmény
+
+| pontszam | minosites |
+|---:|---|
+| 18 | kiváló |
+| 12 | egyéb |
+
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
 
 ```sql
 SELECT CONCAT(
@@ -1137,13 +1150,18 @@ JOIN jelentkezes j
 ON s.id = j.sportolo_id;
 ```
 
+### Végeredmény
+
+| sportolo | minosites |
+|---|---|
+| Kovács Anna | kiváló |
+| Nagy Béla | átlagos |
+
 ---
 
-# 26. JOIN
+# 27. JOIN
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT s.vezeteknev,
@@ -1153,13 +1171,16 @@ JOIN jelentkezes j
 ON s.id = j.sportolo_id;
 ```
 
+### Végeredmény
+
+| vezeteknev | pontszam |
+|---|---:|
+| Kovács | 18 |
+| Nagy | 12 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki a sportoló nevét, az esemény nevét és a pontszámot.
+## Bonyolultabb példa
 
 ```sql
 SELECT CONCAT(
@@ -1176,13 +1197,18 @@ JOIN esemeny e
 ON e.id = j.esemeny_id;
 ```
 
+### Végeredmény
+
+| sportolo | esemeny | pontszam |
+|---|---|---:|
+| Kovács Anna | Tavaszi kupa | 18 |
+| Tóth Kata | Városi bajnokság | 20 |
+
 ---
 
-# 27. LEFT JOIN
+# 28. LEFT JOIN
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT s.vezeteknev,
@@ -1192,13 +1218,16 @@ LEFT JOIN jelentkezes j
 ON s.id = j.sportolo_id;
 ```
 
+### Végeredmény
+
+| vezeteknev | id |
+|---|---:|
+| Kovács | 1 |
+| Nagy | 2 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat a sportolókat, akik nem jelentkeztek eseményre.
+## Bonyolultabb példa
 
 ```sql
 SELECT s.vezeteknev,
@@ -1209,13 +1238,16 @@ ON s.id = j.sportolo_id
 WHERE j.id IS NULL;
 ```
 
+### Végeredmény
+
+| vezeteknev | keresztnev |
+|---|---|
+
 ---
 
-# 28. GROUP BY
+# 29. GROUP BY
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT varos,
@@ -1224,13 +1256,16 @@ FROM sportolo
 GROUP BY varos;
 ```
 
+### Végeredmény
+
+| varos | COUNT(*) |
+|---|---:|
+| Budapest | 2 |
+| Pécs | 2 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Add meg sportáganként a jelentkezések számát.
+## Bonyolultabb példa
 
 ```sql
 SELECT sp.nev,
@@ -1240,16 +1275,22 @@ JOIN esemeny e
 ON sp.id = e.sportag_id
 JOIN jelentkezes j
 ON e.id = j.esemeny_id
-GROUP BY sp.id, sp.nev;
+GROUP BY sp.id,
+         sp.nev;
 ```
 
+### Végeredmény
+
+| nev | jelentkezesek |
+|---|---:|
+| Kosárlabda | 3 |
+| Kézilabda | 2 |
+
 ---
 
-# 29. HAVING
+# 30. HAVING
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT varos,
@@ -1259,13 +1300,16 @@ GROUP BY varos
 HAVING COUNT(*) >= 2;
 ```
 
+### Végeredmény
+
+| varos | COUNT(*) |
+|---|---:|
+| Budapest | 2 |
+| Pécs | 2 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat az eseményeket, amelyekre legalább 2 jelentkezés érkezett.
+## Bonyolultabb példa
 
 ```sql
 SELECT e.nev,
@@ -1273,17 +1317,23 @@ SELECT e.nev,
 FROM esemeny e
 JOIN jelentkezes j
 ON e.id = j.esemeny_id
-GROUP BY e.id, e.nev
+GROUP BY e.id,
+         e.nev
 HAVING COUNT(j.id) >= 2;
 ```
 
+### Végeredmény
+
+| nev | db |
+|---|---:|
+| Tavaszi kupa | 3 |
+| Városi bajnokság | 2 |
+
 ---
 
-# 30. Függvénykombinációk
+# 31. Függvénykombinációk
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT ROUND(
@@ -1293,9 +1343,15 @@ SELECT ROUND(
 FROM jelentkezes;
 ```
 
+### Végeredmény
+
+| ROUND(...) |
+|---:|
+| 15.56 |
+
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
 
 ```sql
 SELECT CONCAT(
@@ -1315,13 +1371,18 @@ GROUP BY s.id,
          s.keresztnev;
 ```
 
+### Végeredmény
+
+| sportolo | atlagpont |
+|---|---:|
+| Kovács Anna | 17.50 |
+| Tóth Kata | 19.50 |
+
 ---
 
-# 31. Allekérdezések
+# 32. Allekérdezések
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -1332,13 +1393,15 @@ WHERE pontszam = (
 );
 ```
 
+### Végeredmény
+
+| id | sportolo_id | pontszam |
+|---:|---:|---:|
+| 3 | 3 | 20 |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat a sportolókat, akik az átlag felett teljesítettek.
+## Bonyolultabb példa
 
 ```sql
 SELECT CONCAT(
@@ -1356,13 +1419,18 @@ WHERE j.pontszam > (
 );
 ```
 
+### Végeredmény
+
+| sportolo | pontszam |
+|---|---:|
+| Kovács Anna | 18 |
+| Tóth Kata | 20 |
+
 ---
 
-# 32. EXISTS
+# 33. EXISTS
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 SELECT *
@@ -1374,13 +1442,16 @@ WHERE EXISTS (
 );
 ```
 
+### Végeredmény
+
+| id | vezeteknev |
+|---:|---|
+| 1 | Kovács |
+| 2 | Nagy |
+
 ---
 
-## Érettségi szintű példa
-
-### Feladat
-
-Listázd ki azokat az eseményeket, amelyekre érkezett jelentkezés.
+## Bonyolultabb példa
 
 ```sql
 SELECT *
@@ -1392,13 +1463,18 @@ WHERE EXISTS (
 );
 ```
 
+### Végeredmény
+
+| id | nev |
+|---:|---|
+| 1 | Tavaszi kupa |
+| 2 | Városi bajnokság |
+
 ---
 
-# 33. CREATE TABLE AS
+# 34. CREATE TABLE AS
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 CREATE TABLE budapestiek AS
@@ -1409,7 +1485,7 @@ WHERE varos = 'Budapest';
 
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
 
 ```sql
 CREATE TABLE legjobbak AS
@@ -1421,11 +1497,9 @@ WHERE pontszam >= 18;
 
 ---
 
-# 34. INSERT INTO SELECT
+# 35. INSERT INTO SELECT
 
----
-
-## Egyszerű példa
+## Példa
 
 ```sql
 INSERT INTO budapestiek
@@ -1436,7 +1510,7 @@ WHERE varos = 'Budapest';
 
 ---
 
-## Érettségi szintű példa
+## Bonyolultabb példa
 
 ```sql
 INSERT INTO legjobbak
@@ -1451,15 +1525,9 @@ WHERE pontszam > (
 
 ---
 
-# 35. Összetett érettségi feladatok
-
----
+# 36. Összetett érettségi feladatok
 
 # 1. feladat
-
-### Feladat
-
-Add meg eseményenként a legjobb sportoló nevét és pontszámát.
 
 ```sql
 SELECT e.nev AS esemeny,
@@ -1481,13 +1549,16 @@ WHERE j.pontszam = (
 );
 ```
 
+### Végeredmény
+
+| esemeny | sportolo | pontszam |
+|---|---|---:|
+| Tavaszi kupa | Tóth Kata | 19 |
+| Városi bajnokság | Tóth Kata | 20 |
+
 ---
 
 # 2. feladat
-
-### Feladat
-
-Listázd ki sportáganként az átlagpontszámot, de csak azokat, ahol az átlag nagyobb 15-nél.
 
 ```sql
 SELECT sp.nev,
@@ -1505,13 +1576,18 @@ GROUP BY sp.id,
 HAVING AVG(j.pontszam) > 15;
 ```
 
+### Végeredmény
+
+| nev | atlag |
+|---|---:|
+| Kosárlabda | 16.33 |
+| Kézilabda | 17.50 |
+
 ---
 
-# 36. Tipikus hibák
+# 37. Tipikus hibák
 
----
-
-# NULL hibás kezelése
+## NULL hibás kezelése
 
 HIBÁS:
 
@@ -1527,7 +1603,7 @@ WHERE email IS NULL
 
 ---
 
-# COUNT használata WHERE-ben
+## COUNT használata WHERE-ben
 
 HIBÁS:
 
@@ -1543,19 +1619,7 @@ HAVING COUNT(*) > 2
 
 ---
 
-# Rossz JOIN
-
-HIBÁS:
-
-```sql
-ON sportolo.id = esemeny.id
-```
-
-Mindig a kapcsolódó mezőket kell összekötni.
-
----
-
-# LIKE helyett =
+## LIKE helyett =
 
 HIBÁS:
 
@@ -1568,15 +1632,3 @@ HELYES:
 ```sql
 WHERE nev LIKE 'K%'
 ```
-
----
-
-# Záró gondolat
-
-
-A legtöbb feladat ugyanarra a néhány mintára épül:
-- JOIN
-- GROUP BY
-- HAVING
-- allekérdezés
-- aggregáló függvények
